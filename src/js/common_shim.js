@@ -249,15 +249,17 @@ export function shimConnectionState(window) {
   const proto = window.RTCPeerConnection.prototype;
   Object.defineProperty(proto, 'connectionState', {
     get() {
-      return this.iceConnectionState === 'completed' ? 'connected' :
-          this.iceConnectionState;
+      return {
+        completed: 'connected',
+        checking: 'connecting'
+      }[this.iceConnectionState] || this.iceConnectionState;
     },
     enumerable: true,
     configurable: true
   });
   Object.defineProperty(proto, 'onconnectionstatechange', {
     get() {
-      return this._onconnectionstatechange;
+      return this._onconnectionstatechange || null;
     },
     set(cb) {
       if (this._onconnectionstatechange) {
@@ -278,7 +280,7 @@ export function shimConnectionState(window) {
     const origMethod = proto[method];
     proto[method] = function() {
       if (!this._connectionstatechangepoly) {
-        this._connectionstatechangepoly = (e) => {
+        this._connectionstatechangepoly = e => {
           const pc = e.target;
           if (pc._lastConnectionState !== pc.connectionState) {
             pc._lastConnectionState = pc.connectionState;
